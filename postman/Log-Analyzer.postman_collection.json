@@ -1,0 +1,174 @@
+{
+  "info": {
+    "name": "Log Analyzer - Step 7",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Start the Java application. For Analyze a log, select samples/sample-repeated.log in the file row under Body."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080",
+      "type": "string"
+    },
+    {
+      "key": "investigationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "beforeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "afterId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Server health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Analyze a log",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/analyze",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": null
+            }
+          ]
+        },
+        "description": "Select a sample log for the file field, then Send."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Report contains counts\", function () { const data = pm.response.json(); pm.expect(data.totalEntries).to.be.a(\"number\"); pm.expect(data.levels).to.have.property(\"ERROR\"); pm.expect(data.errors).to.be.an(\"object\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Missing file example (expect 400)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/analyze",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "note",
+              "value": "No file attached",
+              "type": "text"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Explain one error",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/explain",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Database connection failed\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Sending this sample makes one paid Claude API call through the local server."
+      }
+    },
+    {
+      "name": "Investigate a log",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/investigate",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": null
+            }
+          ]
+        },
+        "description": "Choose samples/sample-repeated.log. Sends the most frequent ERROR message to Claude once. A file with no ERROR entries makes zero paid calls."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const report = pm.response.json();",
+              "    const previous = pm.collectionVariables.get(\"afterId\");",
+              "    if (previous) pm.collectionVariables.set(\"beforeId\", previous);",
+              "    pm.collectionVariables.set(\"afterId\", report.id);",
+              "    pm.collectionVariables.set(\"investigationId\", report.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List recent investigations",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/investigations",
+        "description": "Lists the latest 50 saved investigations, newest first."
+      }
+    },
+    {
+      "name": "Open saved investigation",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/investigations/{{investigationId}}",
+        "description": "Reads the ID from your latest successful investigation. To open an older one, replace investigationId with its ID from the list."
+      }
+    },
+    {
+      "name": "Compare investigations",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/investigations/compare?before={{beforeId}}&after={{afterId}}",
+        "description": "Uses the two latest successful uploads made with this collection. To compare existing reports, paste their IDs in the before and after rows under Params. Reading saved reports is free."
+      }
+    }
+  ]
+}

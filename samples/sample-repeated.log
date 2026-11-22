@@ -1,0 +1,11 @@
+21:00:00 INFO Server started
+21:00:01 INFO Database connection established
+21:00:02 INFO Player logged in
+21:00:03 INFO Game room created
+21:00:04 INFO Second player joined the room
+21:00:05 WARN Request took longer than expected
+21:00:06 ERROR Database connection failed
+21:00:07 ERROR Invalid authentication token
+21:00:08 INFO Request received
+21:00:09 ERROR Audio file not found: sample song.mp3
+21:00:10 ERROR Database connection failed
